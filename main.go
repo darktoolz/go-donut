@@ -1,8 +1,9 @@
 package main
 
 import (
-	"io/ioutil"
 	"log"
+  "io"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -61,6 +62,11 @@ func main() {
 		Help: ".NET assembly, EXE, DLL, VBS, JS or XSL file to execute in-memory."})
 
 	verbose := parser.Flag("v", "verbose", &argparse.Options{Required: false, Help: "Show verbose output."})
+	quiet := parser.Flag("q", "quiet", &argparse.Options{Required: false, Help: "No output."})
+
+  if *quiet {
+    log.SetOutput(io.Discard)
+  }
 
 	if err := parser.Parse(os.Args); err != nil || *srcFile == "" {
 		log.Println(parser.Usage(err))
@@ -90,6 +96,8 @@ func main() {
 	}
 
 	config := new(donut.DonutConfig)
+  config.Quiet   = *quiet
+	config.Verbose = !*quiet && *verbose
 	config.Arch = donutArch
 	config.Entropy = uint32(*entropy)
 	config.OEP = oep
@@ -110,7 +118,6 @@ func main() {
 	config.ModuleName = *moduleName
 	config.Compress = uint32(*zFlag)
 	config.Format = uint32(*format)
-	config.Verbose = *verbose
 
 	if *tFlag {
 		config.Thread = 1
@@ -131,19 +138,23 @@ func main() {
 	} else {
 		payload, err := donut.ShellcodeFromFile(*srcFile, config)
 		if err == nil {
-			f, err := os.Create(*dstFile)
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer f.Close()
-			if _, err = payload.WriteTo(f); err != nil {
-				log.Fatal(err)
-			}
+      if *dstFile == "-" {
+        payload.WriteTo(os.Stdout)
+      } else {
+  			f, err := os.Create(*dstFile)
+	  		if err != nil {
+			  	log.Fatal(err)
+		  	}
+  			defer f.Close()
+	  		if _, err = payload.WriteTo(f); err != nil {
+		  		log.Fatal(err)
+			  }
+      }
 		}
 	}
 	if err != nil {
 		log.Println(err)
-	} else {
+	} else if !config.Quiet {
 		log.Println("Done!")
 	}
 }

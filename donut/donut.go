@@ -1,6 +1,7 @@
 package donut
 
 import (
+  "io"
   "os"
 	"bytes"
 	"encoding/binary"
@@ -78,7 +79,11 @@ func ShellcodeFromFile(filename string, config *DonutConfig) (*bytes.Buffer, err
   var b []byte
   var err error
   if filename == "-" {
-    _, err = os.Stdin.Read(b)
+    bb, e := io.ReadAll(os.Stdin)
+    if e != nil {
+      return nil, e
+    }
+    return ShellcodeFromBytes(bytes.NewBuffer(bb), config)
   } else {
 	  b, err = ioutil.ReadFile(filename)
   }

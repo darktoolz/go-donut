@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Binject/go-donut/donut"
+	"github.com/darktoolz/go-donut/donut"
 	"github.com/akamensky/argparse"
 )
 
@@ -38,6 +38,8 @@ func main() {
 		Help: "Create a new thread for loader. Optionally execute original entrypoint of host process."})
 	action := parser.Int("x", "exit", &argparse.Options{Required: false,
 		Default: 1, Help: "Exiting. 1=exit thread, 2=exit process"})
+	iformat := parser.String("s", "if", &argparse.Options{Required: false,
+		Default: "dll", Help: "Input format: dll (default), exe, dllnet, exenet, xsl, js, vbs"})
 
 	//  -FILE OPTIONS-
 	className := parser.String("c", "class", &argparse.Options{Required: false,
@@ -85,7 +87,7 @@ func main() {
 
 	var donutArch donut.DonutArch
 	switch strings.ToLower(*archStr) {
-	case "x32", "386":
+	case "x32", "386", "x86":
 		donutArch = donut.X32
 	case "x64", "amd64":
 		donutArch = donut.X64
@@ -118,6 +120,7 @@ func main() {
 	config.ModuleName = *moduleName
 	config.Compress = uint32(*zFlag)
 	config.Format = uint32(*format)
+	config.Type = 0
 
 	if *tFlag {
 		config.Thread = 1
@@ -125,6 +128,26 @@ func main() {
 	if *wFlag { // convert command line to unicode? only applies to unmanaged DLL function
 		config.Unicode = 1
 	}
+
+  if *iformat != "" {
+    switch strings.ToLower(*iformat) {
+      case "exe":
+        config.Type = donut.DONUT_MODULE_EXE
+      case "dll":
+        config.Type = donut.DONUT_MODULE_DLL
+      case "exenet":
+        config.Type = donut.DONUT_MODULE_NET_EXE
+      case "dllnet":
+        config.Type = donut.DONUT_MODULE_NET_DLL
+      case "xsl":
+        config.Type = donut.DONUT_MODULE_XSL
+      case "js":
+        config.Type = donut.DONUT_MODULE_JS
+      case "vbs":
+        config.Type = donut.DONUT_MODULE_VBS
+    }
+  }
+
 	config.ExitOpt = uint32(*action)
 
 	if *srcFile == "" {

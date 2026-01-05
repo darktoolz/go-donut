@@ -47,6 +47,8 @@ func DetectDotNet(filename string) (bool, string) {
 // ShellcodeFromFile - Loads PE from file, makes shellcode
 func ShellcodeFromFile(filename string, config *DonutConfig) (*bytes.Buffer, error) {
 
+if config.Type == 0 {
+  config.Type = DONUT_MODULE_DLL
 	switch strings.ToLower(filepath.Ext(filename)) {
 	case ".exe":
 		dotNetMode, dotNetVersion := DetectDotNet(filename)
@@ -75,6 +77,7 @@ func ShellcodeFromFile(filename string, config *DonutConfig) (*bytes.Buffer, err
 	case ".vbs":
 		config.Type = DONUT_MODULE_VBS
 	}
+}
 
   var b []byte
   var err error
